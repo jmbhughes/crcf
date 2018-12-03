@@ -1,5 +1,5 @@
 from abc import ABCMeta, abstractmethod
-
+import numpy as np
 
 class Node:
     """
@@ -73,6 +73,35 @@ class AxisAlignedRule(Rule):
             return x[self.dimension_number] < self.threshold
         else:  # a set of numbers are passed
             return x[:, self.dimension_number] < self.threshold
+
+
+class ExtendedRule(Rule):
+    """
+    A rule that uses a combination of dimensions, i.e. a non axis aligned cut
+    It's stated here using a normal vector and an intercept
+    """
+    def __init__(self, normal_vector, intercept, dimensions=None):
+        super(ExtendedRule, self).__init__()
+        self.normal_vector = normal_vector
+        self.intercept = intercept
+        self.dimensions = dimensions
+
+    def evaluate(self, x):
+        """
+        tell which side the rule sends x
+        :param x: the input
+        :return: a single boolean or a boolean array
+        """
+        if len(x.shape) == 2:  # a set of data points
+            if self.dimensions is not None:  # limited extension
+                return np.dot(x[:, self.dimensions] - self.intercept, self.normal_vector) <= 0
+            else:  # all dimensions are used, i.e. is full extension
+                return np.dot(x[:, self.dimensions] - self.intercept, self.normal_vector) <= 0
+        else:  # a single data point
+            if self.dimensions is not None:  # limited extension
+                return np.dot(x[self.dimensions] - self.intercept, self.normal_vector) <= 0
+            else:  # all dimensions are used, i.e. is full extension
+                return np.dot(x[self.dimensions] - self.intercept, self.normal_vector) <= 0
 
 
 class Tree(metaclass=ABCMeta):
