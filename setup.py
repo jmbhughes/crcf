@@ -1,17 +1,20 @@
 #!/usr/bin/env python
 
-from distutils.core import setup
+from setuptools import setup, find_packages
 
 setup(
-    name='oiforests',
+    name='oaforests',
+    setup_requires=["pytest-runner"],
+    tests_require=["pytest"],
+    test_suite="tests",
+    install_requires=["numpy"],
+
     version='0.0.1',
     author='J. Marcus Hughes',
     author_email='hughes.jmb@gmail.com',
-    packages=['oiforests'],
+    packages=find_packages(),
     url='',
     license='LICENSE.txt',
-    description='Online Isolation Forests',
+    description='Online Anomaly Forests',
     long_description=open('Readme.md').read(),
-    install_requires=["numpy"],
-    test_suite="tests"
 )

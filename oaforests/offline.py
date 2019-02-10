@@ -49,8 +49,8 @@ class LiuNode(Node):
 
             # continue splitting if possible
             if self.depth < max_depth:
-                self.left.split(x[left_indices, :])
-                self.right.split(x[right_indices, :])
+                self.left.split(x[left_indices, :], max_depth=max_depth)
+                self.right.split(x[right_indices, :], max_depth=max_depth)
 
 
 class LiuIsolationTree(Tree):
@@ -184,8 +184,8 @@ class ExtendedNode(Node):
 
             # continue splitting if possible
             if self.depth < max_depth:
-                self.left.split(x[left_indices, :])
-                self.right.split(x[right_indices, :])
+                self.left.split(x[left_indices, :], max_depth=max_depth)
+                self.right.split(x[right_indices, :], max_depth=max_depth)
 
 
 class ExtendedIsolationTree(Tree):
