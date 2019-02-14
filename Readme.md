@@ -1,8 +1,10 @@
 # Combination Robust Cut Forests
-Isolation Forests[] and Robust Random Cut Trees are very similar in many ways, 
+Isolation Forests **[Liu+2008]** and Robust Random Cut Trees **[Guha+2016]** are very similar in many ways, 
 as outlined in the [supporting overview](overview.pdf). Most notably, they are extremes
 of the same outlier scoring function: 
+
 ![equation](https://latex.codecogs.com/gif.latex?%5Ctext%7BFor%20%7D%20%5Ctheta%20%5Cin%20%5B0%2C1%5D%20%5Ctext%7B%20let%20%7D%20%5Cmathrm%7Bscore%7D%28x%29%20%3D%20%5Ctheta%20%5Cmathrm%7Bdepth%7D%28x%29%20&plus;%20%281-%5Ctheta%29%5Cmathrm%7Bdisp%7D%28x%29)
+
 The combination robust cut forest allows you to combine both scores by using an theta other than 0 or 1. 
 
 # Install
