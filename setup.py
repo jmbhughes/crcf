@@ -15,6 +15,6 @@ setup(
     packages=find_packages(),
     url='',
     license='LICENSE.txt',
-    description='Online Anomaly Forests',
+    description='Combination Robust Cut Forests',
     long_description=open('Readme.md').read(),
 )
