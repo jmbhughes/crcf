@@ -1,4 +1,7 @@
 # Combination Robust Cut Forests
+[![CodeFactor](https://www.codefactor.io/repository/github/jmbhughes/crcf/badge)](https://www.codefactor.io/repository/github/jmbhughes/crcf)
+[![PyPI version](https://badge.fury.io/py/crcf.svg)](https://badge.fury.io/py/crcf)
+
 Isolation Forests **[Liu+2008]** and Robust Random Cut Trees **[Guha+2016]** are very similar in many ways, 
 as outlined in the [supporting overview](overview.pdf). Most notably, they are extremes
 of the same outlier scoring function: 

@@ -9,7 +9,7 @@ setup(
     test_suite="tests",
     install_requires=["numpy"],
 
-    version='0.0.1',
+    version='0.0.2',
     author='J. Marcus Hughes',
     author_email='hughes.jmb@gmail.com',
     packages=find_packages(),
@@ -17,4 +17,5 @@ setup(
     license='LICENSE.txt',
     description='Combination Robust Cut Forests',
     long_description=open('Readme.md').read(),
+    long_description_content_type="text/markdown",
 )
