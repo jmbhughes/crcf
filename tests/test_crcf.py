@@ -146,20 +146,20 @@ class TestCombinationTree:
         tree.left_child.right_child = crcf.CombinationTree()
         tree.left_child.right_child.count = 2
         tree.left_child.right_child.depth_ = 2
-        tree.left_child.right_child.is_leaf = False
+        tree.left_child.right_child.is_leaf_ = False
         tree.left_child.right_child.rule = crcf.AxisAlignedRule(2, 0.5)
         tree.left_child.right_child.parent = tree.left_child
 
         tree.left_child.right_child.left_child = crcf.CombinationTree()
         tree.left_child.right_child.left_child.count = 1
         tree.left_child.right_child.left_child.depth_ = 3
-        tree.left_child.right_child.left_child.is_leaf = True
+        tree.left_child.right_child.left_child.is_leaf_ = True
         tree.left_child.right_child.left_child.parent = tree.left_child.right_child
 
         tree.left_child.right_child.right_child = crcf.CombinationTree()
         tree.left_child.right_child.right_child.count = 1
         tree.left_child.right_child.right_child.depth_ = 3
-        tree.left_child.right_child.right_child.is_leaf = True
+        tree.left_child.right_child.right_child.is_leaf_ = True
         tree.left_child.right_child.right_child.parent = tree.left_child.right_child
         return tree
 
@@ -171,10 +171,41 @@ class TestCombinationTree:
         x = np.array([0.7, 0.1, 0.1])
         tree = TestCombinationTree.build_test_tree()
         leaf = tree.find(x)
-        assert leaf.is_leaf_ == True
+        assert leaf.is_leaf_ is True
         assert leaf.count == 1
         assert leaf.left_child is None
         assert leaf.right_child is None
         assert tree.displacement(x) == 3
         assert tree.displacement(np.array([0.3, 0.3, 0.1])) == 2
         assert tree.displacement(np.array([0.3, 0.6, 0.1])) == 1
+
+    def test_codisp(self):
+        """
+        make sure codisp calculated without error... TODO: test for actual calculated values instead of >0
+        """
+        x = np.array([0.7, 0.1, 0.1])
+        tree = TestCombinationTree.build_test_tree()
+        assert tree.codisplacement(x) > 0
+        assert tree.codisplacement(np.array([0.3, 0.3, 0.1])) > 0
+        assert tree.codisplacement(np.array([0.3, 0.6, 0.1])) > 0
+
+    def test_depth(self):
+        """
+        check that depth calculations work correctly in both the estimated and nonestimated cases
+        """
+        tree = TestCombinationTree.build_test_tree()
+        assert tree.depth(np.array([0.7, 0.1, 0.1])) == 1
+        assert tree.depth(np.array([0.3, 0.3, 0.1])) == 2
+        assert tree.depth(np.array([0.3, 0.6, 0.1])) == 3
+        assert tree.depth(np.array([0.3, 0.6, 0.1]), estimated=True) == 3
+
+        tree.left_child.right_child.right_child.count = 500
+        assert tree.depth(np.array([0.3, 0.6, 0.7])) == 3
+        assert np.abs(tree.depth(np.array([0.3, 0.6, 0.7]), estimated=True) - 14.5) < 0.5
+
+    def test__score(self):
+        """
+        small sanity check of scoring
+        """
+        tree = TestCombinationTree.build_test_tree()
+        assert tree.score(np.array([[0.7, 0.1, 0.1]]))

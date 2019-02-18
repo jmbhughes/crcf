@@ -294,7 +294,7 @@ class CombinationTree:
             :return: the expected average length had the tree continued to grow
             :rtype: float
             """
-            return 2 * harmonic(n-1) - (2*(n-1) / n)
+            return 2 * harmonic(n-1) - (2*(n-1) / n) if n > 1 else 0
 
         leaf = self.find(x)
         extension = expected_length(leaf.count) if estimated else 0
@@ -320,7 +320,20 @@ class CombinationTree:
         :return: the collusive displacement induced by including x in the tree
         :rtype: float
         """
-        raise NotImplementedError("will be implemented in a later version")
+        node = self.find(x)
+        best_codisp = 0
+
+        # work upward from the leaf node to the parent considering all paths allong
+        while not node.is_root():
+            sibling = node.parent.left_child if node.parent.left_child is not node else node.parent.right_child
+            collusive_size, sibling_size = node.count, sibling.count
+            this_codisp = sibling_size/collusive_size
+
+            # compare to the best_codisp and update if higher
+            if this_codisp > best_codisp:
+                best_codisp = this_codisp
+            node = node.parent
+        return best_codisp
 
     def find(self, x):
         """
@@ -342,29 +355,58 @@ class CombinationTree:
         raise NotImplementedError("will be implemented in a later version")
 
     def is_leaf(self):
+        """
+        :return: True if the Tree consists of only a leaf node, False otherwise
+        :rtype: bool
+        """
         return self.is_leaf_
 
     def is_internal(self):
+        """
+        :return: True if current node is internal, otherwise False
+        :rtype: bool
+        """
         return not self.is_leaf()
 
     def is_root(self):
+        """
+        :return: True if the current node is the root of the tree, false otherwise
+        :rtype: bool
+        """
         return self.parent is None
 
-    def score(self, X, theta=1, use_codisplacement=True):
+    def score(self, X, theta=1, use_codisplacement=True, estimated=False):
+        """
+        Calculate the anomaly score
+        :param X: a set of points to score
+        :type X: np.ndarray
+        :param theta: the combination value for theta * depth + (1-theta) * [co]disp,
+            theta=0 is the isolation forest version
+            theta=1 is the robust random cut forest version
+        :type theta: float
+        :param use_codisplacement: if True uses codisplacement, if false uses displacement
+        :type use_codisplacement: bool
+        :param estimated: whether to use the absolute depth or the estimated depths from count, see depth()
+        :type estimated: bool
+        :return: the anomaly score
+        :rtype: float
+        """
         if use_codisplacement:
             if theta == 1:  # only use depth
-                return np.array([self.find(x).depth for x in X])
+                return np.array([self.depth(x) for x in X])
             elif theta == 0:  # only use codisplacement
                 return np.array([self.codisplacement(x) for x in X])
             else:  # use combination of both
-                return np.array([theta * self.find(x).depth + (1-theta) * self.codisplacement(x) for x in X])
+                return np.array([theta * self.depth(x, estimated=estimated)
+                                 + (1-theta) * self.codisplacement(x) for x in X])
         else:  # use displacement
             if theta == 1:  # only use depth
-                return np.array([self.find(x).depth for x in X])
+                return np.array([self.depth(x, estimated=estimated) for x in X])
             elif theta == 0:  # only use displacement
                 return np.array([self.displacement(x) for x in X])
             else:  # use combination of both
-                return np.array([theta * self.find(x).depth + (1 - theta) * self.displacement(x) for x in X])
+                return np.array([theta * self.depth(x, estimated=estimated)
+                                 + (1 - theta) * self.displacement(x) for x in X])
 
     def save(self, path):
         raise NotImplementedError("will be implemented in a later version")
