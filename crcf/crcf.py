@@ -1,3 +1,6 @@
+"""
+TODO: module doc string
+"""
 import numpy as np
 from abc import abstractmethod, ABC
 
@@ -170,17 +173,36 @@ class NonAxisAlignedRule(Rule):
         """
         super().__init__()
         self.normal, self.point = normal, point
+        self.offset = normal.dot(point) # the offset used in calculations
 
     def _evaluate(self, x):
-        pass
+        """
+        Determine the path for a single point, points less than the threshold value are true
+        :param x: a single example, e.g. np.ndarray([1,2,3])
+        :type x: np.ndarray
+        :return: true if x[dimension] < value and false if x[dimension] >= value
+        :rtype: bool
+        """
+        return np.inner(self.normal, x) < self.offset
 
     @classmethod
     def _generate_uniform(cls, bounding_box):
-        pass
+        """
+        Generate a rule with no special attention to the bounding box, i.e. all dimeensions are equally important
+        :param bounding_box: the minimal axis parallel bounding box that contains all the data points
+            for a given node, e.g. [[1,2], [1,10]] this means the value in first dimension has values
+            from 1 to 2 and in the second dimension 1 to 10.
+        :type bounding_box: np.ndarray
+        :return: a new rule
+        :rtype: NonAxisAlignedRule
+        """
+        normal = np.random.uniform(-1, 1, size=bounding_box.shape[0])
+        point = np.array(np.random.uniform(low, high) for low, high in bounding_box)
+        return NonAxisAlignedRule(normal, point)
 
     @classmethod
     def _generate_biased(cls, bounding_box):
-        pass
+        raise NotImplementedError("Will be added in a later version.")
 
 
 class CombinationTree:
@@ -189,66 +211,166 @@ class CombinationTree:
     and isolation trees of Liu et al. (2010). The parameters can be set to get the exact formulation of each or
     a tree that is an interpolation of the two modes:
 
-    ISOLATION TREE PARAMETERS
+    ISOLATION TREE PARAMETERS:
+    TODO: complete
 
-    ROBUST RANDOM CUT TREE PARAMETERS
+    ROBUST RANDOM CUT TREE PARAMETERS:
+    TODO: complete
+
     """
-    def __init__(self, X=None, depth_limit=None):
+    def __init__(self, x=None, depth_limit=None, rule_kind=AxisAlignedRule, rule_mode="uniform"):
+        # properties of the tree
+        self.depth_limit = depth_limit
+        self.rule_kind = rule_kind
+        self.rule_mode = rule_mode
+
+        # properties of every node
         self.rule = None
         self.count = 0
         self.bounding_box = None
-        self.is_leaf = True
+        self.is_leaf_ = True
+        self.depth_ = 0
 
-        # manage the dependencies
+        # manage the relationships between other points
         self.parent = None
         self.left_child = None
         self.right_child = None
 
+        # build the tree if any points are passed to it
+        if x is not None:
+            self._build(x)
+
+    def _build(self, x):
+        """
+        Grow a tree from the points in x
+        :param x: a set of points
+        :type x: np.ndarray
+        :return: the newly built node
+        :rtype: CombinationTree
+        """
+        # update the rule and local properties with regards to x
+        self.count = x.shape[0]
+        self.bounding_box = np.array([[np.nanmin(x[:, i]), np.nanmax(x[:, i])] for i in range(x.shape[1])])
+        if self.count == 1:  # is a leaf node
+            self.is_leaf_ = True
+        else:
+            self.is_leaf_ = False
+            self.rule = self.rule_kind.generate(self.bounding_box, mode=self.rule_mode)
+
+            # create the children nodes and create relationships
+            evaluation = self.rule.evaluate(x)  # whether the points go to the left subtree
+            left_child = CombinationTree(x=x[evaluation])
+            right_child = CombinationTree(x=x[np.logical_not(evaluation)])
+            left_child.parent, right_child.parent = self, self
+            self.left_child, self.right_child = left_child, right_child
+            self.left_child.depth_ = self.depth_ + 1
+            self.right_child.depth_ = self.depth_ + 1
+        return self
+
+    def depth(self, x, estimated=False):
+        """
+        Determine the depth of where x is in the tree
+        :param x: a point
+        :type x: np.ndarray
+        :param estimated: if True will use the counts at a leaf node
+            to estimate how far down the tree the point would be if it had been grown completely
+        :type estimated: bool
+        :return: the depth of the point
+        :rtype: int
+        """
+        def harmonic(n):
+            """
+            :param n: index
+            :type n: int
+            :return: the nth harmonic number
+            :rtype: float
+            """
+            return np.log(n) + np.euler_gamma
+
+        def expected_length(n):
+            """
+            :param n: count remaining in leaf node
+            :type n: int
+            :return: the expected average length had the tree continued to grow
+            :rtype: float
+            """
+            return 2 * harmonic(n-1) - (2*(n-1) / n)
+
+        leaf = self.find(x)
+        extension = expected_length(leaf.count) if estimated else 0
+        return leaf.depth_ + extension
+
     def displacement(self, x):
-        return 0
+        """
+        The displacement of a point x in the tree
+        :param x: a data sample
+        :type x: np.ndarray
+        :return: the "surprise" or displacement induced by including x in the tree
+        :rtype: float
+        """
+        leaf = self.find(x)
+        sibling = leaf.parent.left_child if leaf.parent.left_child is not leaf else leaf.parent.right_child
+        return sibling.count
 
     def codisplacement(self, x):
-        return 0
+        """
+        Codisplacement allows for colluders in the displacement per RRCF paper [Guha+2016]
+        :param x: a data sample
+        :type x: np.ndarray
+        :return: the collusive displacement induced by including x in the tree
+        :rtype: float
+        """
+        raise NotImplementedError("will be implemented in a later version")
 
-    def depth(self, x):
-        return 0
+    def find(self, x):
+        """
+        Find the correct leaf node for an input point x
+        :param x: a data point
+        :type x: np.ndarray
+        :return: the leaf node x would belong with
+        :rtype: CombinationTree
+        """
+        node = self
+        while not node.is_leaf_:
+            node = node.left_child if node.rule.evaluate(np.array([x])) else node.right_child
+        return node
 
     def insert(self, x):
-        pass
+        raise NotImplementedError("will be implemented in a later version")
 
     def remove(self, x):
-        pass
+        raise NotImplementedError("will be implemented in a later version")
 
     def is_leaf(self):
-        return self.is_leaf
+        return self.is_leaf_
 
     def is_internal(self):
-        return not self.is_leaf
+        return not self.is_leaf()
 
     def is_root(self):
         return self.parent is None
 
     def score(self, X, theta=1, use_codisplacement=True):
         if use_codisplacement:
-            if theta == 1: # only use depth
-                return np.array([self.depth(x) for x in X])
-            elif theta == 0: # only use codisplacement
+            if theta == 1:  # only use depth
+                return np.array([self.find(x).depth for x in X])
+            elif theta == 0:  # only use codisplacement
                 return np.array([self.codisplacement(x) for x in X])
-            else: # use combination of both
-                return np.array([theta * self.depth(x) + (1-theta) * self.codisplacement(x) for x in X])
+            else:  # use combination of both
+                return np.array([theta * self.find(x).depth + (1-theta) * self.codisplacement(x) for x in X])
         else:  # use displacement
             if theta == 1:  # only use depth
-                return np.array([self.depth(x) for x in X])
+                return np.array([self.find(x).depth for x in X])
             elif theta == 0:  # only use displacement
                 return np.array([self.displacement(x) for x in X])
             else:  # use combination of both
-                return np.array([theta * self.depth(x) + (1 - theta) * self.displacement(x) for x in X])
+                return np.array([theta * self.find(x).depth + (1 - theta) * self.displacement(x) for x in X])
 
     def save(self, path):
-        pass
+        raise NotImplementedError("will be implemented in a later version")
 
     def load(self, path):
-        pass
+        raise NotImplementedError("will be implemented in a later version")
 
 
 class IsolationTree(CombinationTree):
@@ -271,22 +393,22 @@ class RobustRandomCutTree(CombinationTree):
 
 class Forest:
     def __init__(self, num_trees=100, tree_properties=None):
-        pass
+        raise NotImplementedError("will be implemented in a later version")
 
     def save(self, path):
-        pass
+        raise NotImplementedError("will be implemented in a later version")
 
     def load(self, path):
-        pass
+        raise NotImplementedError("will be implemented in a later version")
 
     def insert(self, path):
-        pass
+        raise NotImplementedError("will be implemented in a later version")
 
     def remove(self, path):
-        pass
+        raise NotImplementedError("will be implemented in a later version")
 
     def score(self, path):
-        pass
+        raise NotImplementedError("will be implemented in a later version")
 
 
 class IsolationForest(Forest):
