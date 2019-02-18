@@ -3,7 +3,7 @@ TODO: module doc string
 """
 import numpy as np
 from abc import abstractmethod, ABC
-
+from graphviz import Digraph
 
 class Rule(ABC):
     """
@@ -157,6 +157,14 @@ class AxisAlignedRule(Rule):
         value = np.random.uniform(bounding_box[dimension][0], bounding_box[dimension][1])
         return AxisAlignedRule(dimension, value)
 
+    def __str__(self):
+        """
+        customized string output
+        :return: description of rule
+        :rtype: str
+        """
+        return "x[{}]<{:.2f}".format(self.dimension, self.value)
+
 
 class NonAxisAlignedRule(Rule):
     """
@@ -204,6 +212,15 @@ class NonAxisAlignedRule(Rule):
     def _generate_biased(cls, bounding_box):
         raise NotImplementedError("Will be added in a later version.")
 
+    def __str__(self):
+        """
+        customized string output
+        :return: description of rule
+        :rtype: str
+        """
+        return "x^T{}<{:.2f}".format("[" + ("{:.2f},"*self.normal.shape[0]).format(self.normal) + "]",
+                                     self.offset)
+
 
 class CombinationTree:
     """
@@ -218,7 +235,7 @@ class CombinationTree:
     TODO: complete
 
     """
-    def __init__(self, x=None, depth_limit=None, rule_kind=AxisAlignedRule, rule_mode="uniform"):
+    def __init__(self, x=None, depth_limit=None, rule_kind=AxisAlignedRule, rule_mode="uniform", depth=None):
         # properties of the tree
         self.depth_limit = depth_limit
         self.rule_kind = rule_kind
@@ -229,7 +246,7 @@ class CombinationTree:
         self.count = 0
         self.bounding_box = None
         self.is_leaf_ = True
-        self.depth_ = 0
+        self.depth_ = 0 if depth is None else depth
 
         # manage the relationships between other points
         self.parent = None
@@ -259,12 +276,10 @@ class CombinationTree:
 
             # create the children nodes and create relationships
             evaluation = self.rule.evaluate(x)  # whether the points go to the left subtree
-            left_child = CombinationTree(x=x[evaluation])
-            right_child = CombinationTree(x=x[np.logical_not(evaluation)])
+            left_child = CombinationTree(x=x[evaluation], depth=self.depth_+1)
+            right_child = CombinationTree(x=x[np.logical_not(evaluation)], depth=self.depth_+1)
             left_child.parent, right_child.parent = self, self
             self.left_child, self.right_child = left_child, right_child
-            self.left_child.depth_ = self.depth_ + 1
-            self.right_child.depth_ = self.depth_ + 1
         return self
 
     def depth(self, x, estimated=False):
@@ -375,7 +390,7 @@ class CombinationTree:
         """
         return self.parent is None
 
-    def score(self, X, theta=1, use_codisplacement=True, estimated=False):
+    def score(self, X, theta=1, use_codisplacement=True, estimated=False, normalized=False):
         """
         Calculate the anomaly score
         :param X: a set of points to score
@@ -391,28 +406,58 @@ class CombinationTree:
         :return: the anomaly score
         :rtype: float
         """
-        if use_codisplacement:
-            if theta == 1:  # only use depth
-                return np.array([self.depth(x) for x in X])
-            elif theta == 0:  # only use codisplacement
-                return np.array([self.codisplacement(x) for x in X])
-            else:  # use combination of both
-                return np.array([theta * self.depth(x, estimated=estimated)
-                                 + (1-theta) * self.codisplacement(x) for x in X])
-        else:  # use displacement
-            if theta == 1:  # only use depth
-                return np.array([self.depth(x, estimated=estimated) for x in X])
-            elif theta == 0:  # only use displacement
-                return np.array([self.displacement(x) for x in X])
-            else:  # use combination of both
-                return np.array([theta * self.depth(x, estimated=estimated)
-                                 + (1 - theta) * self.displacement(x) for x in X])
+
+        disp = np.array([self.codisplacement(x) for x in X]) if use_codisplacement \
+            else np.array([self.displacement(x) for x in X])
+        depths = np.array([self.depth(x, estimated=estimated) for x in X])
+        if normalized:
+            disp = disp / (self.count - 1)
+            depths = depths / self.count
+        return theta * depths + (1-theta)*disp
 
     def save(self, path):
         raise NotImplementedError("will be implemented in a later version")
 
     def load(self, path):
         raise NotImplementedError("will be implemented in a later version")
+
+    def draw(self, path=None):
+        """
+        draw the tree to a file
+        :param path: the path to save image to
+        :type path: str
+        :return: a drawn tree
+        """
+        dot = Digraph()
+        queue = [(0, self)]  # start at the root with no parent
+        index = 1
+
+        # for all the nodes
+        while queue:
+            parent_index, node = queue.pop()
+            if node is not None:  # it isn't the placeholder child of a leaf node
+
+                # determine the label and color from its leaf status
+                if node.is_leaf():
+                    node_label = "{}".format(node.count)
+                    node_attr = {"fillcolor": "gray", "style": "filled"}
+                else:
+                    node_label = str(node.rule)
+                    node_attr = dict()
+
+                # draw the node
+                dot.node(str(index), node_label, _attributes=node_attr)
+
+                if parent_index != 0:  # it isn't the root node
+                    dot.edge(str(parent_index), str(index))  # draw the edge connecting to the parent
+
+                # recurse on the children
+                queue.append((index, node.left_child))
+                queue.append((index, node.right_child))
+                index += 1
+
+        # show the graph
+        dot.view(filename=path)
 
 
 class IsolationTree(CombinationTree):

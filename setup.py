@@ -7,8 +7,7 @@ setup(
     setup_requires=["pytest-runner"],
     tests_require=["pytest"],
     test_suite="tests",
-    install_requires=["numpy"],
-
+    install_requires=["numpy", "graphviz"],
     version='0.0.2',
     author='J. Marcus Hughes',
     author_email='hughes.jmb@gmail.com',
