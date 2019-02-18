@@ -15,6 +15,7 @@ The tests can be run from `pytest` with `python3 setup.py test`.
 
 # Tasks
 - [ ] complete basic implementation
+- [ ] fix documentation generation error
 - [ ] provide clear documentation and usage instructions
 - [ ] incorporate categorical variable support, including categorical rules
 - [ ] complete the write-up document with a benchmarking of performance
