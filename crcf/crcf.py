@@ -236,6 +236,7 @@ class CombinationTree:
 
     """
     def __init__(self, x=None, depth_limit=None, rule_kind=AxisAlignedRule, rule_mode="uniform", depth=None):
+        # TODO: make the depth limit active
         # properties of the tree
         self.depth_limit = depth_limit
         self.rule_kind = rule_kind
@@ -390,7 +391,7 @@ class CombinationTree:
         """
         return self.parent is None
 
-    def score(self, X, theta=1, use_codisplacement=True, estimated=False, normalized=False):
+    def score(self, X, alpha=1, beta=0, use_codisplacement=True, estimated=False, normalized=False):
         """
         Calculate the anomaly score
         :param X: a set of points to score
@@ -413,7 +414,7 @@ class CombinationTree:
         if normalized:
             disp = disp / (self.count - 1)
             depths = depths / self.count
-        return theta * depths + (1-theta)*disp
+        return alpha * depths + beta*disp
 
     def save(self, path):
         raise NotImplementedError("will be implemented in a later version")
@@ -452,8 +453,8 @@ class CombinationTree:
                     dot.edge(str(parent_index), str(index))  # draw the edge connecting to the parent
 
                 # recurse on the children
-                queue.append((index, node.left_child))
                 queue.append((index, node.right_child))
+                queue.append((index, node.left_child))
                 index += 1
 
         # show the graph
@@ -478,9 +479,10 @@ class RobustRandomCutTree(CombinationTree):
         super().__init__(X, depth_limit=None)
 
 
-class Forest:
-    def __init__(self, num_trees=100, tree_properties=None):
-        raise NotImplementedError("will be implemented in a later version")
+class CombinationForest:
+    def __init__(self, x=None, num_trees=100, tree_properties=None):
+        self.trees = [CombinationTree(x=x) for _ in range(num_trees)]  # TODO: allow tree properties to be set
+        self.tree_properties = tree_properties
 
     def save(self, path):
         raise NotImplementedError("will be implemented in a later version")
@@ -494,15 +496,45 @@ class Forest:
     def remove(self, path):
         raise NotImplementedError("will be implemented in a later version")
 
-    def score(self, path):
+    def _score_if(self, X):
+        average_depths = np.array([np.mean([tree.depth(x, estimated=True) for tree in self.trees])
+                           for x in X])
+        def harmonic(n):
+            """
+            :param n: index
+            :type n: int
+            :return: the nth harmonic number
+            :rtype: float
+            """
+            return np.log(n) + np.euler_gamma
+
+        def expected_length(n):
+            """
+            :param n: count remaining in leaf node
+            :type n: int
+            :return: the expected average length had the tree continued to grow
+            :rtype: float
+            """
+            return 2 * harmonic(n-1) - (2*(n-1) / n) if n > 1 else 0
+        # bounding_depths = np.array([expected_length(tree.count) for tree in self.trees])
+        bounding_depth = expected_length(self.trees[0].count)
+        scores = np.power(2, -average_depths/bounding_depth)
+        return scores
+
+    def _score_rrcf(self, X):
+        average_codisp = np.array([np.mean([tree.codisplacement(x) for tree in self.trees]) for x in X])
+        bounding_codisp = self.trees[0].count - 1
+        return average_codisp / bounding_codisp
+
+    def score(self, x):
         raise NotImplementedError("will be implemented in a later version")
 
 
-class IsolationForest(Forest):
+class IsolationForest(CombinationForest):
     def __init__(self, num_trees=100, tree_properties=None):
         super().__init__(num_trees=num_trees, tree_properties=tree_properties)
 
 
-class RobustRandomCutForest(Forest):
+class RobustRandomCutForest(CombinationForest):
     def __init__(self, num_trees=100, tree_properties=None):
         super().__init__(num_trees=num_trees, tree_properties=tree_properties)
