@@ -4,6 +4,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='crcf',
+    python_requires='>=3.7',
     setup_requires=["pytest-runner"],
     tests_require=["pytest"],
     test_suite="tests",
