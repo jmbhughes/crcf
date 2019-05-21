@@ -21,7 +21,7 @@ class TestCombinationForest:
         assert len(forest.trees) == count
         for tree in forest.trees:
             assert tree.root.count == 1
-            assert tree.root.depth == 0
+            assert tree.root.depth() == 0
             assert tree.root.left_child is None
             assert tree.root.right_child is None
             assert tree.root.rule is None
@@ -39,9 +39,9 @@ class TestCombinationForest:
             assert tree.root.count == 5
             assert tree.root.left_child is not None
             assert tree.root.right_child is not None
-            assert tree.root.depth == 0
-            assert tree.root.left_child.depth == 1
-            assert tree.root.right_child.depth == 1
+            assert tree.root.depth() == 0
+            assert tree.root.left_child.depth() == 1
+            assert tree.root.right_child.depth() == 1
 
     def test_displacement(self):
         # TODO: make a better test than just asserting they are positive

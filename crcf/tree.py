@@ -12,8 +12,7 @@ class Node:
     """
     A container object for nodes in a tree. 
     """
-    __slots__ = ['depth', 'is_leaf', 'parent', 'left_child', 'right_child', 'rule', 'count', 'bounding_box']
-    depth: int
+    __slots__ = ['is_leaf', 'parent', 'left_child', 'right_child', 'rule', 'count', 'bounding_box']
     is_leaf: bool
     parent: Optional[Node]
     left_child: Optional[Node]
@@ -30,6 +29,17 @@ class Node:
             return None
         else:
             return self.parent.left_child if self.parent.left_child is not self else self.parent.right_child
+
+    def depth(self) -> int:
+        """
+        :return: the depth of the node in the tree
+        """
+        depth = 0
+        current = self
+        while current.parent is not None:
+            current = current.parent
+            depth += 1
+        return depth
 
 
 class CombinationTree:
@@ -63,12 +73,16 @@ class CombinationTree:
         Note: that if the tree is already fitted this will overwrite completely.
         :param x: the data points to fit  e.g. x = [[1, 2, 3], [3, 4, 5]] is a list of two 3-d points
         """
-        self.root = Node(depth=0, is_leaf=True,
-                         parent=None, left_child=None, right_child=None,
-                         rule=None, count=0, bounding_box=None)
+        self.root = Node(is_leaf=True,
+                         parent=None,
+                         left_child=None,
+                         right_child=None,
+                         rule=None,
+                         count=0,
+                         bounding_box=None)
         self._fit(self.root, x)
 
-    def _fit(self, node: Node, x: np.ndarray) -> None:
+    def _fit(self, node: Node, x: np.ndarray, depth: int = 0) -> None:
         """
         Helper function for fit that recursively grows the tree
         :param node: the current node (the root node of whatever subtree you're growing)
@@ -79,7 +93,7 @@ class CombinationTree:
         node.bounding_box = np.array([[np.nanmin(x[:, i]), np.nanmax(x[:, i])] for i in range(x.shape[1])])
         # if the depth limit has been hit, the tree can no longer grow
         # have to check the parent depth since the current node is not set yet
-        if self.depth_limit and node.depth >= self.depth_limit - 1:
+        if self.depth_limit and depth >= self.depth_limit - 1:
             node.is_leaf = True
         elif node.count == 1:  # will be a leaf node
             node.is_leaf = True
@@ -91,8 +105,7 @@ class CombinationTree:
             evaluation = node.rule.evaluate(x)  # whether the points go to the left subtree
 
             # left child setup
-            left_child = Node(depth=node.depth + 1,
-                              is_leaf=True,
+            left_child = Node(is_leaf=True,
                               parent=node,
                               left_child=None,
                               right_child=None,
@@ -100,11 +113,10 @@ class CombinationTree:
                               count=0,
                               bounding_box=None)
             node.left_child = left_child
-            self._fit(left_child, x[evaluation])
+            self._fit(left_child, x[evaluation], depth=depth+1)
 
             # right child setup
-            right_child = Node(depth=node.depth+1,
-                               is_leaf=True,
+            right_child = Node(is_leaf=True,
                                parent=node,
                                left_child=None,
                                right_child=None,
@@ -112,7 +124,7 @@ class CombinationTree:
                                count=0,
                                bounding_box=None)
             node.right_child = right_child
-            self._fit(right_child, x[np.logical_not(evaluation)])
+            self._fit(right_child, x[np.logical_not(evaluation)], depth=depth+1)
 
     def count(self) -> int:
         """
@@ -157,16 +169,18 @@ class CombinationTree:
         # show the graph
         dot.view(filename=path)
 
-    def find(self, x: np.ndarray) -> Node:
+    def find(self, x: np.ndarray) -> (Node, int):
         """
         Find the correct leaf node for an input point x
         :param x: a data point
-        :return: the leaf node x would belong with
+        :return: the leaf node x would belong with, depth of that node
         """
         node = self.root
+        depth = 0
         while not node.is_leaf:
             node = node.left_child if node.rule.evaluate(np.array([x])) else node.right_child
-        return node
+            depth += 1
+        return node, depth
 
     def get_node(self, label: str) -> Node:
         """
@@ -226,9 +240,9 @@ class CombinationTree:
             """
             return 2 * harmonic(n-1) - (2*(n-1) / n) if n > 1 else 0
 
-        leaf = self.find(x)
+        leaf, depth = self.find(x)
         extension = expected_length(leaf.count) if estimated else 0
-        return leaf.depth + extension
+        return depth + extension
 
     def displacement(self, x: np.ndarray) -> float:
         """
@@ -236,7 +250,7 @@ class CombinationTree:
         :param x: a data sample
         :return: the "surprise" or displacement induced by including x in the tree
         """
-        leaf = self.find(x)
+        leaf, depth = self.find(x)
         sibling = leaf.parent.left_child if leaf.parent.left_child is not leaf else leaf.parent.right_child
         return sibling.count
 
@@ -246,7 +260,7 @@ class CombinationTree:
         :param x: a data sample
         :return: the collusive displacement induced by including x in the tree
         """
-        node = self.find(x)
+        node, depth = self.find(x)
         best_codisp = 0
 
         # work upward from the leaf node to the parent considering all paths along
