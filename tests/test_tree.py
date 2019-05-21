@@ -4,14 +4,29 @@ import numpy as np
 
 
 class TestCombinationTree:
-    # def test_remove_root(self):
-    #     """ make sure we can delete the root node of the tree"""
-    #     tree = self.build_test_tree()
-    #     root = tree.root
-    #     tree.remove_by_node(root)
-    #     assert tree.root is None
-    #     assert len(tree.labels) == 0
-    #     assert len(tree.nodes) == 0
+    def test_remove_root(self):
+        """ make sure we can delete the root node of the tree"""
+        tree = self.build_test_tree()
+        root = tree.root
+        tree.remove_by_node(root)
+        assert tree.root is None
+        assert len(tree.labels) == 0
+        assert len(tree.nodes) == 0
+
+    def test_remove_gen1(self):
+        """ make sure we can delete a node that is the child of the root, a generation one, or depth 1 node """
+        tree = self.build_test_tree()
+        node_to_delete = tree.root.left_child
+        new_root = tree.root.right_child
+        tree.remove_by_node(node_to_delete)
+        assert tree.root is new_root
+        assert tree.root.depth() == 0
+
+    def test_remove_normal(self):
+        """ make sure we can delete a node that is deeper in the tree, i.e. depth >= 2"""
+        tree = self.build_test_tree()
+        node_to_delete = tree.root.left_child.right_child
+
 
     def test_sibling(self):
         """ make sure that the Node can find its sibling in the tree"""
@@ -40,6 +55,9 @@ class TestCombinationTree:
                                               count=3,
                                               bounding_box=None)
         assert tree.root.right_child.sibling() is tree.root.left_child
+        assert tree.root.right_child.depth() == 1
+        assert tree.root.left_child.depth() == 1
+        assert tree.root.depth() == 0
 
     def test_build_empty(self):
         """ ensuring an empty tree can be built """

@@ -1,5 +1,5 @@
 from __future__ import annotations
-
+from typing import Type
 import numpy as np
 from abc import abstractmethod, ABC
 
@@ -88,6 +88,21 @@ class Rule(ABC):
         """
         pass
 
+    @abstractmethod
+    def __str__(self) -> str:
+        """
+        :return: string representation
+        """
+        pass
+
+    @abstractmethod
+    def __eq__(self, other: Type[Rule]) -> bool:
+        """
+        :param other: other node to check
+        :return: whether the two nodes are same
+        """
+        pass
+
 
 class AxisAlignedRule(Rule):
     """
@@ -113,7 +128,7 @@ class AxisAlignedRule(Rule):
     @classmethod
     def _generate_uniform(cls, bounding_box: np.ndarray) -> AxisAlignedRule:
         """
-        Generate a rule with no special attention to the bounding box, i.e. all dimeensions are equally important
+        Generate a rule with no special attention to the bounding box, i.e. all dimensions are equally important
         :param bounding_box: the minimal axis parallel bounding box that contains all the data points
             for a given node, e.g. [[1,2], [1,10]] this means the value in first dimension has values
             from 1 to 2 and in the second dimension 1 to 10.
@@ -145,6 +160,13 @@ class AxisAlignedRule(Rule):
         """
         return "x[{}]<{:.2f}".format(self.dimension, self.value)
 
+    def __eq__(self, other: AxisAlignedRule) -> bool:
+        """
+        :param other: rule to test equality against
+        :return: whether the rules are equivalent
+        """
+        return isinstance(other, AxisAlignedRule) and other.dimension == self.dimension and other.value == self.value
+
 
 class NonAxisAlignedRule(Rule):
     """
@@ -172,7 +194,7 @@ class NonAxisAlignedRule(Rule):
     @classmethod
     def _generate_uniform(cls, bounding_box: np.ndarray) -> NonAxisAlignedRule:
         """
-        Generate a rule with no special attention to the bounding box, i.e. all dimeensions are equally important
+        Generate a rule with no special attention to the bounding box, i.e. all dimensions are equally important
         :param bounding_box: the minimal axis parallel bounding box that contains all the data points
             for a given node, e.g. [[1,2], [1,10]] this means the value in first dimension has values
             from 1 to 2 and in the second dimension 1 to 10.
@@ -194,3 +216,11 @@ class NonAxisAlignedRule(Rule):
         """
         return "x^T{}<{:.2f}".format("[" + ("{:.2f},"*self.normal.shape[0]).format(self.normal) + "]",
                                      self.offset)
+
+    def __eq__(self, other: NonAxisAlignedRule) -> bool:
+        """
+        :param other: rule to test equality against
+        :return: whether the rules are equivalent
+        """
+        return isinstance(other, NonAxisAlignedRule) and np.all(other.normal == self.normal) and\
+            np.all(other.point == self.point)

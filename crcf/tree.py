@@ -41,6 +41,20 @@ class Node:
             depth += 1
         return depth
 
+    def __str__(self):
+        return str(self.is_leaf) + str(self.rule) + str(self.bounding_box)
+
+    def __hash__(self):
+        return hash(str(self))
+
+    def __eq__(self, other: Node):
+        return self.is_leaf == other.is_leaf \
+               and self.left_child == other.left_child \
+               and self.right_child == other.right_child \
+               and self.rule == other.rule \
+               and self.count == other.count \
+               and np.all(self.bounding_box == other.bounding_box)
+
 
 class CombinationTree:
     """
@@ -307,59 +321,92 @@ class CombinationTree:
             depths = depths / self.root.count
         return params['alpha'] * depths + params['beta'] * disp
 
-    # def remove_by_node(self, node: Node) -> None:
-    #     """
-    #     Remove the subtree at this node using the RRCF rules.
-    #     below we delete the R node:
-    #                |               |
-    #                G               G
-    #               / |             / |
-    #              o   P    TO     o  S
-    #                 / |
-    #                S   R
-    #     :param node: node at root of tree or single node to remove
-    #     """
-    #     node_to_delete = node
-    #     sibling = node_to_delete.sibling()
-    #     parent = node_to_delete.parent
-    #     grandparent = parent.parent
-    #
-    #     if parent is None:  # we are deleting the root of the tree
-    #         # so reset everything
-    #         del self.root
-    #         self.root = None
-    #         self.labels = dict()
-    #         self.nodes = dict()
-    #     elif grandparent is None:  # the parent is the root of the tree
-    #         self.root = sibling
-    #         self.root.parent = None
-    #
-    #     else:  # this is the normal case that occurs
-    #         sibling.parent = grandparent
-    #         sibling.depth -= 1
-    #
-    #         # if this is a labeled node, clean up its labelling
-    #         if node in self.labels:
-    #             label = self.labels[node]
-    #             del self.nodes[label]
-    #             del self.labels[node]
-    #
-    # def remove_by_label(self, label: str) -> None:
-    #     """
-    #     Remove a node from its label
-    #     Raises a KeyError if a node does not exist with that label
-    #     :param label: the label of the node
-    #     """
-    #     node = self.get_node(label)
-    #     self.remove_by_node(node)
-    #
-    # def remove_by_value(self, x: np.ndarray) -> None:
-    #     """
-    #     Removes a node based associated with the value x
-    #     :param x: the value of node
-    #     """
-    #     node = self.find(x)
-    #     self.remove_by_node(node)
+    def remove_by_node(self, node: Node) -> None:
+        """
+        Remove the subtree at this node using the RRCF rules.
+        below we delete the R node:
+                   |               |
+                   G               G
+                  / |             / |
+                 o   P    TO     o  S
+                    / |
+                   S   R
+        :param node: node at root of tree or single node to remove
+        """
+        node_to_delete = node
+        parent = node_to_delete.parent
+
+        if parent is None:  # we are deleting the root of the tree
+            # so reset everything
+            del self.root
+            self.root = None
+            self.labels = dict()
+            self.nodes = dict()
+        elif parent.parent is None:  # the parent is the root of the tree
+            self._remove_gen1(node)
+        else:  # this is the normal case that occurs, the node is somewhere with depth 2+
+            self._remove_normal(node)
+
+    def _remove_normal(self, node: Node) -> None:
+        """
+        Remove a node that is deeper in the tree, i.e. it is not a child of the root
+        :param node: the root of the subtree to delete
+        """
+        self._clear_labels(node)
+
+        parent = node.parent
+        grandparent = parent.parent
+        sibling = node.sibling()
+        sibling.parent = grandparent
+
+        # TODO: update the bounding boxes
+
+    def _remove_gen1(self, node: Node) -> None:
+        """
+        Remove a node that is a child of the root, meaning that the sibling becomes the new root
+        :param node: root of the subtree to remove
+        """
+        self._clear_labels(node)
+        sibling = node.sibling()
+        self.root = sibling
+        self.root.parent = None
+
+    def _clear_labels(self, node: Node) -> None:
+        """
+        Clear the labels of all nodes in the subtree rooted at node
+        :param node: the root of the subtree to clear
+        """
+        nodes = [node]
+        while nodes:
+            current = nodes.pop()
+
+            # if its not a leaf it has children so add them to clear next
+            if not current.is_leaf:
+                nodes.append(current.left_child)
+                nodes.append(current.right_child)
+
+            # if a label existed for it
+            if current in self.labels:
+                label = self.labels[current]
+                del self.nodes[label]
+                del self.labels[current]
+
+    def remove_by_label(self, label: str) -> None:
+        """
+        Remove a node from its label
+        Raises a KeyError if a node does not exist with that label
+        :param label: the label of the node
+        """
+        node = self.get_node(label)
+        self.remove_by_node(node)
+
+    def remove_by_value(self, x: np.ndarray) -> None:
+        """
+        Removes a node based associated with the value x
+        :param x: the value of node
+        """
+        node, depth = self.find(x)
+        self.remove_by_node(node)
     #
     # def insert(self, x: np.ndarray, label: Optional[str] = None) -> None:
     #     """
