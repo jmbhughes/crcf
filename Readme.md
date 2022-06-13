@@ -6,7 +6,7 @@ Isolation Forests **[Liu+2008]** and Robust Random Cut Trees **[Guha+2016]** are
 as outlined in the [supporting overview](overview.pdf). Most notably, they are extremes
 of the same outlier scoring function: 
 
-![](https://latex.codecogs.com/gif.latex?\theta&space;\text{Depth}&space;&plus;&space;(1-\theta)&space;\text{[Co]Disp})
+$$\theta \textrm{Depth} + (1 - \theta) \textrm{[Co]Disp}$$ 
 
 The combination robust cut forest allows you to combine both scores by using an theta other than 0 or 1. 
 
