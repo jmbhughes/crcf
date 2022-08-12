@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "crcf"
-version = "0.0.3"
+version = "0.0.4"
 description = "Combination Robust Cut Forests"
 authors = ["Marcus Hughes <hughes.jmb@gmail.com>"]
 license = "MIT"
