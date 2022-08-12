@@ -1,0 +1,13 @@
+[tool.poetry]
+name = "crcf"
+version = "0.0.3"
+description = "Combination Robust Cut Forests"
+authors = ["Marcus Hughes <hughes.jmb@gmail.com>"]
+license = "MIT"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.7"
+numpy = "^1.23.1"
+graphviz = "^0.20.1"
+
