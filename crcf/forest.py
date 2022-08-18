@@ -74,7 +74,7 @@ class CombinationForest:
         return forest
 
     def depth(self, x: np.ndarray,
-              estimated: bool = True) -> float:
+              estimated: bool = True) -> np.ndarray:
         """Determine the average depth of where x is in the forest's trees
 
         Parameters
@@ -87,11 +87,12 @@ class CombinationForest:
 
         Returns
         -------
-        the depth of a point
+        np.ndarray
+            the depth of a point
         """
-        return np.mean(np.array([tree.depth(x, estimated=estimated) for tree in self.trees]))[0]
+        return np.mean(np.array([tree.depth(x, estimated=estimated) for tree in self.trees]))
 
-    def displacement(self, x: np.ndarray) -> float:
+    def displacement(self, x: np.ndarray) -> np.ndarray:
         """The displacement of a point x in the forest
 
         Parameters
@@ -101,12 +102,13 @@ class CombinationForest:
 
         Returns
         -------
-        the "surprise" or displacement induced by including x in the forest
+        np.ndarray
+            the "surprise" or displacement induced by including x in the forest
         """
 
-        return np.mean(np.array([tree.displacement(x) for tree in self.trees]))[0]
+        return np.mean(np.array([tree.displacement(x) for tree in self.trees]))
 
-    def codisplacement(self, x: np.ndarray) -> float:
+    def codisplacement(self, x: np.ndarray) -> np.ndarray:
         """Codisplacement allows for colluders in the displacement per RRCF paper [Guha+2016]
 
         Parameters
@@ -116,10 +118,11 @@ class CombinationForest:
 
         Returns
         -------
-        the collusive displacement induced by including x in the tree
+        np.ndarray
+            the collusive displacement induced by including x in the tree
         """
 
-        return np.mean(np.array([tree.codisplacement(x) for tree in self.trees]))[0]
+        return np.mean(np.array([tree.codisplacement(x) for tree in self.trees]))
 
     def score(self, x: np.ndarray, **kwargs) -> np.ndarray:
         """Calculate the anomaly score
