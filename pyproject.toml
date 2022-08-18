@@ -10,4 +10,3 @@ readme = "README.md"
 python = "^3.7"
 numpy = "^1.23.1"
 graphviz = "^0.20.1"
-

@@ -10,20 +10,44 @@ class CombinationForest:
     def __init__(self,
                  num_trees: int = 100,
                  tree_properties: Optional[dict] = None) -> None:
+        """Creates a Combination Forest
+
+        Parameters
+        ----------
+        num_trees : int
+            number of trees
+        tree_properties : Optional[dict[str, Any]]
+            the properties of each tree
+        """
         self.tree_properties = tree_properties if tree_properties is not None else dict()
         self.trees = [crcf.tree.CombinationTree(**self.tree_properties) for _ in range(num_trees)]
 
     def fit(self, x: np.ndarray) -> None:
+        """Fit the forest. This overwrites any previous tree training.
+
+        Parameters
+        ----------
+        x : np.ndarray
+            data to fit on
+
+        Returns
+        -------
+        None
         """
-        Fit the forest. Note that this overwrites any previous tree training.
-        :param x: the data to fit
-        """
-        [tree.fit(x) for tree in self.trees]
+        for tree in self.trees:
+            tree.fit(x)
 
     def save(self, path: str) -> None:
-        """
-        Save the forest.
-        :param path: where to save the file
+        """Save the forest.
+
+        Parameters
+        ----------
+        path : str
+            where to save the tree, must end in '.pkl' as forests are currently saved as pickle files
+
+        Returns
+        -------
+        None
         """
         # TODO: change this to a more robust save method
         if not path.lower().endswith('.pkl'):
@@ -33,56 +57,94 @@ class CombinationForest:
 
     @classmethod
     def load(cls, path: str) -> CombinationForest:
-        """
-        Load a forest from file
-        :param path: location of the file
-        :return: the loaded tree
+        """Load a forest from file
+
+        Parameters
+        ----------
+        path : str
+            the pickle file to load the tree from
+
+        Returns
+        -------
+        CombinationForest
+            the loaded tree
         """
         with open(path, 'rb') as f:
             forest = pickle.load(f)
         return forest
 
     def depth(self, x: np.ndarray,
-              estimated: bool = True) -> float:
-        """
-        Determine the average depth of where x is in the forest's trees
-        :param x: a point
-        :param estimated: if True will use the counts at a leaf node
-            to estimate how far down the tree the point would be if it had been grown completely
-        :return: the depth of the point
+              estimated: bool = True) -> np.ndarray:
+        """Determine the average depth of where x is in the forest's trees
+
+        Parameters
+        ----------
+        x : np.ndarray
+            a single data point as a numpy array
+        estimated : bool
+            if True will use the counts at a leaf node to estimate how far down
+            the tree the point would be if it had been grown completely
+
+        Returns
+        -------
+        np.ndarray
+            the depth of a point
         """
         return np.mean(np.array([tree.depth(x, estimated=estimated) for tree in self.trees]))
 
-    def displacement(self, x: np.ndarray) -> float:
+    def displacement(self, x: np.ndarray) -> np.ndarray:
+        """The displacement of a point x in the forest
+
+        Parameters
+        ----------
+        x : np.ndarray
+            a single data point as a numpy array
+
+        Returns
+        -------
+        np.ndarray
+            the "surprise" or displacement induced by including x in the forest
         """
-        The displacement of a point x in the forest
-        :param x: a data sample
-        :return: the "surprise" or displacement induced by including x in the forest
-        """
+
         return np.mean(np.array([tree.displacement(x) for tree in self.trees]))
 
-    def codisplacement(self, x: np.ndarray) -> float:
+    def codisplacement(self, x: np.ndarray) -> np.ndarray:
+        """Codisplacement allows for colluders in the displacement per RRCF paper [Guha+2016]
+
+        Parameters
+        ----------
+        x : np.ndarray
+            a single data point as a numpy array
+
+        Returns
+        -------
+        np.ndarray
+            the collusive displacement induced by including x in the tree
         """
-        Codisplacement allows for colluders in the displacement per RRCF paper [Guha+2016]
-        :param x: a data sample
-        :return: the collusive displacement induced by including x in the tree
-        """
+
         return np.mean(np.array([tree.codisplacement(x) for tree in self.trees]))
 
     def score(self, x: np.ndarray, **kwargs) -> np.ndarray:
-        """
-        Calculate the anomaly score
-        :param x: a set of points to score
+        """Calculate the anomaly score
 
-        :Keyword Arguments:
-            *  use_codisplacement: if True uses codisplacement, if false uses displacement, default=True
-            *  estimated: whether to use the absolute depth or the estimated depths from count, see depth(),
-                          default=False
-            *  alpha: the combination value for alpha * depth + (1-beta) * [co]disp, default=1
-            *  beta: see alpha, default=0
-            *  normalized: whether or not to attempt to normalize the score, default=False
-        :return: the anomaly score
+        Parameters
+        ----------
+        x : np.ndarray
+            a set of points to score
+        kwargs
+            keyword arguments
+                *  use_codisplacement: if True uses codisplacement, if false uses displacement, default=True
+                *  estimated: whether to use the absolute depth or the estimated depths from count, see depth(),
+                              default=False
+                *  alpha: the combination value for alpha * depth + (1-beta) * [co]disp, default=1
+                *  beta: see alpha, default=0
+                *  normalized: whether to attempt to normalize the score, default=False
+        Returns
+        -------
+        np.ndarray
+            the anomaly score
         """
+
         params = {"use_codisplacement": False,
                   "estimated": False,
                   "alpha": 1,

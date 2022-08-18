@@ -15,7 +15,6 @@ You can install with through `pip install crcf`. Alternatively, you can download
 `python3 setup.py install` or `pip3 install .` Please note that this package uses features from Python 3.7+
 and is not compatible with earlier Python versions. 
 
-The tests can be run from `pytest` with `python3 setup.py test`.
 
 # Tasks
 - [X] complete basic implementation
