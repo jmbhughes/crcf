@@ -289,37 +289,42 @@ class CombinationTree:
             node = node.parent
         return best_codisp
 
-    def score(self, x: np.ndarray, **kwargs) -> np.ndarray:
-        """
-        Calculate the anomaly score
-        :param x: a set of points to score
+    def score(self, x: np.ndarray,
+              normalize=False,
+              use_codisplacement=False,
+              use_depth_estimation=False,
+              depth_weight=1.0,
+              disp_weight=0.0, **kwargs) -> np.ndarray:
+        """ Calculate the anomaly score
 
-        :Keyword Arguments:
-            *  use_codisplacement: if True uses codisplacement, if false uses displacement, default=True
-            *  estimated: whether to use the absolute depth or the estimated depths from count, see depth(),
-                          default=False
-            *  alpha: the combination value for alpha * depth + (1-beta) * [co]disp, default=1
-            *  beta: see alpha, default=0
-            *  normalized: whether or not to attempt to normalize the score, default=False
-        :return: the anomaly score
+        Parameters
+        ----------
+        x : np.ndarray
+            a set of points to score
+        normalize : bool
+            whether to attempt to normalize the score, default=False
+        use_codisplacement : bool
+            if True uses codisplacement, if False uses displacement; default=False
+        use_depth_estimation : bool
+            whether to use the absolute depth or the estimated depths from count, see depth(),
+                  default=False
+        depth_weight : float
+            the weight for depth in the score, depth_weight * depth + disp_weight * [co]disp, default=1
+        disp_weight : float
+            see depth_weight
+
+        Returns
+        -------
+        np.ndarray
+            scores of the form depth_weight * depth + disp_weight * [co]disp for each point in the dataset
         """
-        params = {"use_codisplacement": False,
-                  "estimated": False,
-                  "alpha": 1,
-                  "beta": 0,
-                  "normalized": False}
-        for k, v in kwargs.items():
-            try:
-                params[k] = v
-            except KeyError:
-                raise RuntimeWarning("{} is not a defined parameter. See the docstring.".format(k))
-        disp = np.array([self.codisplacement(xx) for xx in x]) if params['use_codisplacement'] \
+        disp = np.array([self.codisplacement(xx) for xx in x]) if use_codisplacement \
             else np.array([self.displacement(xx) for xx in x])
-        depths = np.array([self.depth(xx, estimated=params['estimated']) for xx in x])
-        if params['normalized']:
+        depths = np.array([self.depth(xx, estimated=use_depth_estimation) for xx in x])
+        if normalize:
             disp = disp / (self.root.count - 1)
             depths = depths / self.root.count
-        return params['alpha'] * depths + params['beta'] * disp
+        return depth_weight * depths + disp_weight * disp
 
     def remove_by_node(self, node: Node) -> None:
         """

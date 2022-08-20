@@ -27,6 +27,7 @@ class Rule(ABC):
         :return: true if goes to left side, false for right side
         """
         return np.array([self._evaluate(xx) for xx in x])
+        # TODO: this is much slower than it has to be, use array methods
 
     @abstractmethod
     def _evaluate(self, x: np.ndarray) -> bool:
@@ -158,7 +159,7 @@ class AxisAlignedRule(Rule):
         customized string output
         :return: description of rule
         """
-        return "x[{}]<{:.2f}".format(self.dimension, self.value)
+        return f"x[{self.dimension}]<{self.value:.2f}"
 
     def __eq__(self, other: AxisAlignedRule) -> bool:
         """
