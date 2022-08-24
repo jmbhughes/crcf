@@ -595,7 +595,7 @@ class CombinationTree:
 
         Raises
         ------
-        KeyErorr
+        KeyError
             If the label is already used, it raises a KeyError.
 
         Returns
