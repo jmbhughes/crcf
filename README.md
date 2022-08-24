@@ -21,6 +21,7 @@ and is not compatible with earlier Python versions.
 - [X] provide clear documentation and usage instructions
 - [ ] ensure interface allows for fitting and scoring on multiple points at the same time
 - [ ] implement a better saving method than pickling
+- [ ] use random tests with hypothesis
 - [ ] implement tree down in cython
 - [ ] accelerate forests with multi-threading
 - [ ] incorporate categorical variable support, including categorical rules
