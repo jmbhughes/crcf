@@ -124,38 +124,42 @@ class CombinationForest:
 
         return np.mean(np.array([tree.codisplacement(x) for tree in self.trees]))
 
-    def score(self, x: np.ndarray, **kwargs) -> np.ndarray:
+    def score(self, x: np.ndarray,
+              normalize=False,
+              use_codisplacement=False,
+              use_depth_estimation=False,
+              depth_weight=1.0,
+              disp_weight=0.0) -> np.ndarray:
         """Calculate the anomaly score
 
         Parameters
         ----------
-        x : np.ndarray
+                x : np.ndarray
             a set of points to score
-        kwargs
-            keyword arguments
-                *  use_codisplacement: if True uses codisplacement, if false uses displacement, default=True
-                *  estimated: whether to use the absolute depth or the estimated depths from count, see depth(),
-                              default=False
-                *  alpha: the combination value for alpha * depth + (1-beta) * [co]disp, default=1
-                *  beta: see alpha, default=0
-                *  normalized: whether to attempt to normalize the score, default=False
+        normalize : bool
+            whether to attempt to normalize the score, default=False
+        use_codisplacement : bool
+            if True uses codisplacement, if False uses displacement; default=False
+        use_depth_estimation : bool
+            whether to use the absolute depth or the estimated depths from count, see depth(),
+                  default=False
+        depth_weight : float
+            the weight for depth in the score, depth_weight * depth + disp_weight * [co]disp, default=1
+        disp_weight : float
+            see depth_weight
+
         Returns
         -------
         np.ndarray
             the anomaly score
         """
-
-        params = {"use_codisplacement": False,
-                  "estimated": False,
-                  "alpha": 1,
-                  "beta": 0,
-                  "normalized": False}
-        for k, v in kwargs.items():
-            try:
-                params[k] = v
-            except KeyError:
-                raise RuntimeWarning("{} is not a defined parameter. See the docstring.".format(k))
-        return np.mean(np.array([tree.score(x, **params) for tree in self.trees]))
+        return np.mean(np.array([tree.score(x,
+                                            normalize=normalize,
+                                            use_codisplacement=use_codisplacement,
+                                            use_depth_estimation=use_depth_estimation,
+                                            depth_weight=depth_weight,
+                                            disp_weight=disp_weight)
+                                 for tree in self.trees]))
 
     # def _score_if(self, x: np.ndarray) -> np.ndarray:
     #     """

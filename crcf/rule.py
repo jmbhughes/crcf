@@ -21,40 +21,62 @@ class Rule(ABC):
         pass
 
     def evaluate(self, x: np.ndarray) -> np.ndarray:
-        """
-        Decide the path of a set of points using the rule
-        :param x: a set of points, e.g. np.array([[1,2,3],[4,5,6]])
-        :return: true if goes to left side, false for right side
+        """Decide the path of a set of points using the rule
+
+
+        Parameters
+        ----------
+        x : np.ndarray
+            a set of points, e.g. np.array([[1,2,3],[4,5,6]])
+
+        Returns
+        -------
+        np.ndarray of bool
+            True if point goes to left side, False for right side
         """
         return np.array([self._evaluate(xx) for xx in x])
         # TODO: this is much slower than it has to be, use array methods
 
     @abstractmethod
     def _evaluate(self, x: np.ndarray) -> bool:
-        """
-        Score a single point
-        :param x: a single example, e.g. np.ndarray([1,2,3])
-        :return: true if goes to left side, false for right side
+        """Score a single point
+
+        Parameters
+        ----------
+        x : np.ndarray
+            a single example, 1-D numpy array
+
+        Returns
+        -------
+        bool
+            True if point goes to left side, False for right side
         """
         pass
 
     @classmethod
     def generate(cls, bounding_box: np.ndarray, mode: str = "uniform") -> Rule:
-        """
-        Generates a new rule from the bounding box.
-        The mode determines the strategy of picking a dimension.
+        """Generates a new rule from the bounding box.
 
-        :param bounding_box: the minimal axis parallel bounding box that contains all the data points
+        Parameters
+        ----------
+        bounding_box : np.ndarray
+            the minimal axis parallel bounding box that contains all the data points
             for a given node, e.g. [[1,2], [1,10]] this means the value in first dimension has values
             from 1 to 2 and in the second dimension 1 to 10.
-        :param mode: the strategy of picking a dimension:
+        mode : str
+            the strategy of picking a dimension:
             - "uniform": all dimensions are equally considered
             - "biased": dimensions with larger value ranges are weighted proportionally more
                 in two dimensions if the bounding box were [[1,2], [1,10]] this means the
                 value in first dimension has values from 1 to 2 and in the second dimension 1 to 10.
                 In the biased setting the first dimension has a weight of 2-1=1 and the second dimension
                 has weight 10-1=9. The second dimension is 9 times more likely to be chosen.
-        :return: a new rule
+
+
+        Returns
+        -------
+        Rule
+            a new rule
         """
 
         # switch on the mode and call the appropriate function
@@ -68,40 +90,49 @@ class Rule(ABC):
     @classmethod
     @abstractmethod
     def _generate_uniform(cls, bounding_box: np.ndarray) -> Rule:
-        """
-        Generate a rule with no special attention to the bounding box, i.e. all dimeensions are equally important
-        :param bounding_box: the minimal axis parallel bounding box that contains all the data points
+        """Generate a rule with no special attention to the bounding box, i.e. all dimeensions are equally important
+
+
+        Parameters
+        ----------
+        bounding_box : np.ndarray
+            the minimal axis parallel bounding box that contains all the data points
             for a given node, e.g. [[1,2], [1,10]] this means the value in first dimension has values
             from 1 to 2 and in the second dimension 1 to 10.
-        :return: a new rule
+
+        Returns
+        -------
+        Rule
+            a new random rule
         """
         pass
 
     @classmethod
     @abstractmethod
     def _generate_biased(cls, bounding_box: np.ndarray) -> Rule:
-        """
-        Generate a rule with no weighted attention to the bounding box, i.e. wider dimensions are more important
-        :param bounding_box: the minimal axis parallel bounding box that contains all the data points
+        """Generate a rule with no weighted attention to the bounding box, i.e. wider dimensions are more important
+
+
+        Parameters
+        ----------
+        bounding_box : np.ndarray
+            the minimal axis parallel bounding box that contains all the data points
             for a given node, e.g. [[1,2], [1,10]] this means the value in first dimension has values
             from 1 to 2 and in the second dimension 1 to 10.
-        :return: a new rule
+
+        Returns
+        -------
+        Rule
+            a new random rule
         """
         pass
 
     @abstractmethod
     def __str__(self) -> str:
-        """
-        :return: string representation
-        """
         pass
 
     @abstractmethod
     def __eq__(self, other: Type[Rule]) -> bool:
-        """
-        :param other: other node to check
-        :return: whether the two nodes are same
-        """
         pass
 
 
@@ -111,29 +142,50 @@ class AxisAlignedRule(Rule):
     for that dimension
     """
     def __init__(self, dimension: int, value: float):
-        """
-        :param dimension: the number, 0-indexed, describing the dimension of the cut
-        :param value: the  value to threshold on, i.e. x < value is true
+        """Initialize an AxisAlignedRule
+
+        Parameters
+        ----------
+        dimension : int
+            the number, 0-indexed, describing the dimension of the cut
+        value : float
+            the  value to threshold on, i.e. x < value is true
         """
         super().__init__()
         self.dimension, self.value = dimension, value
 
     def _evaluate(self, x: np.ndarray) -> bool:
-        """
-        Determine the path for a single point, points less than the threshold value are true
-        :param x: a single example, e.g. np.ndarray([1,2,3])
-        :return: true if x[dimension] < value and false if x[dimension] >= value
+        """Determine the path for a single point, points less than the threshold value are true
+
+
+        Parameters
+        ----------
+        x : np.ndarray
+             single example, e.g. np.ndarray([1,2,3])
+
+        Returns
+        -------
+        bool
+            true if x[dimension] < value and false if x[dimension] >= value
         """
         return x[self.dimension] < self.value
 
     @classmethod
     def _generate_uniform(cls, bounding_box: np.ndarray) -> AxisAlignedRule:
-        """
-        Generate a rule with no special attention to the bounding box, i.e. all dimensions are equally important
-        :param bounding_box: the minimal axis parallel bounding box that contains all the data points
+        """Generate a rule with no special attention to the bounding box, i.e. all dimeensions are equally important
+
+
+        Parameters
+        ----------
+        bounding_box : np.ndarray
+            the minimal axis parallel bounding box that contains all the data points
             for a given node, e.g. [[1,2], [1,10]] this means the value in first dimension has values
             from 1 to 2 and in the second dimension 1 to 10.
-        :return: a new rule
+
+        Returns
+        -------
+        Rule
+            a new random rule
         """
         dimension = np.random.randint(0, bounding_box.shape[0])
         value = np.random.uniform(bounding_box[dimension][0], bounding_box[dimension][1])
@@ -141,12 +193,20 @@ class AxisAlignedRule(Rule):
 
     @classmethod
     def _generate_biased(cls, bounding_box: np.ndarray) -> AxisAlignedRule:
-        """
-        Generate a rule with no weighted attention to the bounding box, i.e. wider dimensions are more important
-        :param bounding_box: the minimal axis parallel bounding box that contains all the data points
+        """Generate a rule with no weighted attention to the bounding box, i.e. wider dimensions are more important
+
+
+        Parameters
+        ----------
+        bounding_box : np.ndarray
+            the minimal axis parallel bounding box that contains all the data points
             for a given node, e.g. [[1,2], [1,10]] this means the value in first dimension has values
             from 1 to 2 and in the second dimension 1 to 10.
-        :return: a new rule
+
+        Returns
+        -------
+        Rule
+            a new random rule
         """
         lengths = np.diff(bounding_box)
         dimension = np.random.choice(np.arange(bounding_box.shape[0]),
@@ -155,17 +215,9 @@ class AxisAlignedRule(Rule):
         return AxisAlignedRule(dimension, value)
 
     def __str__(self) -> str:
-        """
-        customized string output
-        :return: description of rule
-        """
         return f"x[{self.dimension}]<{self.value:.2f}"
 
     def __eq__(self, other: AxisAlignedRule) -> bool:
-        """
-        :param other: rule to test equality against
-        :return: whether the rules are equivalent
-        """
         return isinstance(other, AxisAlignedRule) and other.dimension == self.dimension and other.value == self.value
 
 
@@ -175,31 +227,50 @@ class NonAxisAlignedRule(Rule):
     It is described by a normal vector to the hyperplane and a point the hyperplane passes through.
     """
     def __init__(self, normal: np.ndarray, point: np.ndarray):
-        """
-        Create a non-axis aligned rule
-        :param normal: the normal vector for the hyperplane
-        :param point: a point the hyperplane must pass through
+        """Create a non-axis-aligned rule
+
+        Parameters
+        ----------
+        normal : np.ndarray
+            the normal vector for the hyperplane
+        point : np.ndarray
+            a point the hyperplane must pass through
         """
         super().__init__()
         self.normal, self.point = normal, point
         self.offset = normal.dot(point)  # the offset used in calculations
 
     def _evaluate(self, x: np.ndarray) -> bool:
-        """
-        Determine the path for a single point, points less than the threshold value are true
-        :param x: a single example, e.g. np.ndarray([1,2,3])
-        :return: true if x[dimension] < value and false if x[dimension] >= value
+        """Score a single point
+
+        Parameters
+        ----------
+        x : np.ndarray
+            a single example, 1-D numpy array
+
+        Returns
+        -------
+        bool
+            True if point goes to left side, False for right side
         """
         return np.inner(self.normal, x) < self.offset
 
     @classmethod
     def _generate_uniform(cls, bounding_box: np.ndarray) -> NonAxisAlignedRule:
-        """
-        Generate a rule with no special attention to the bounding box, i.e. all dimensions are equally important
-        :param bounding_box: the minimal axis parallel bounding box that contains all the data points
+        """Generate a rule with no special attention to the bounding box, i.e. all dimeensions are equally important
+
+
+        Parameters
+        ----------
+        bounding_box : np.ndarray
+            the minimal axis parallel bounding box that contains all the data points
             for a given node, e.g. [[1,2], [1,10]] this means the value in first dimension has values
             from 1 to 2 and in the second dimension 1 to 10.
-        :return: a new rule
+
+        Returns
+        -------
+        Rule
+            a new random rule
         """
         normal = np.random.uniform(-1, 1, size=bounding_box.shape[0])
         point = np.array(np.random.uniform(low, high) for low, high in bounding_box)
@@ -207,21 +278,27 @@ class NonAxisAlignedRule(Rule):
 
     @classmethod
     def _generate_biased(cls, bounding_box: np.ndarray) -> NonAxisAlignedRule:
-        # TODO: figure out how to generate biased
+        """Generate a rule with no weighted attention to the bounding box, i.e. wider dimensions are more important
+
+
+        Parameters
+        ----------
+        bounding_box : np.ndarray
+            the minimal axis parallel bounding box that contains all the data points
+            for a given node, e.g. [[1,2], [1,10]] this means the value in first dimension has values
+            from 1 to 2 and in the second dimension 1 to 10.
+
+        Returns
+        -------
+        Rule
+            a new random rule
+        """
         raise NotImplementedError("Will be added in a later version.")
 
     def __str__(self) -> str:
-        """
-        customized string output
-        :return: description of rule
-        """
         return "x^T{}<{:.2f}".format("[" + ("{:.2f},"*self.normal.shape[0]).format(self.normal) + "]",
                                      self.offset)
 
     def __eq__(self, other: NonAxisAlignedRule) -> bool:
-        """
-        :param other: rule to test equality against
-        :return: whether the rules are equivalent
-        """
         return isinstance(other, NonAxisAlignedRule) and np.all(other.normal == self.normal) and\
             np.all(other.point == self.point)

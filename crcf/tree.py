@@ -405,7 +405,7 @@ class CombinationTree:
               use_codisplacement=False,
               use_depth_estimation=False,
               depth_weight=1.0,
-              disp_weight=0.0, **kwargs) -> np.ndarray:
+              disp_weight=0.0) -> np.ndarray:
         """ Calculate the anomaly score
 
         Parameters
@@ -611,10 +611,13 @@ class CombinationTree:
 
 class IsolationTree(CombinationTree):
     def __init__(self, depth_limit=None):
+        """Initialize an isolation tree
+
+        Parameters
+        ----------
+        depth_limit : int
+            the maximum depth a tree can grow to, None indicates there is no limit
         """
-        Initialize an isolation tree
-        :param depth_limit: the maximum depth the tree can grow to,
-                            a depth limit of None indicates there is no limit        """
         super().__init__(depth_limit=depth_limit)
 
     def codisplacement(self, x):
@@ -625,24 +628,23 @@ class IsolationTree(CombinationTree):
         raise NotImplementedError("Isolation trees do not have displacement. " +
                                   "See the CombinationTree or the RobustRandomCutTree instead.")
 
-    def score(self, x: np.ndarray, **kwargs) -> np.ndarray:
-        """
-        Calculate the anomaly score
-        :param x: a set of points to score
+    def score(self, x: np.ndarray, estimated: bool = False) -> np.ndarray:
+        """Calculate the anomaly score
 
-        :Keyword Arguments:
-            *  estimated: whether to use the absolute depth or the estimated depths from count, see depth(),
-                          default=False
-        :return: the anomaly score
-        """
-        params = {"estimated": False}
-        for k, v in kwargs.items():
-            try:
-                params[k] = v
-            except KeyError:
-                raise RuntimeWarning("{} is not a defined parameter. See the docstring.".format(k))
+        Parameters
+        ----------
+        x : np.ndarray
+            a set of points to score
+        estimated : bool
+            if True will use the counts at a leaf node to estimate how far down the tree the point
+                would be if it had been grown completely
 
-        depths = np.array([self.depth(xx, estimated=params['estimated']) for xx in x])
+        Returns
+        -------
+        np.ndarray
+            the scores!
+        """
+        depths = np.array([self.depth(xx, estimated=estimated) for xx in x])
         return depths
 
 
@@ -656,27 +658,19 @@ class RobustRandomCutTree(CombinationTree):
                                   "See the CombinationTree or IsolationTree instead.")
 
     def score(self, x: np.ndarray, **kwargs) -> np.ndarray:
-        """
-        Calculate the anomaly score
-        :param x: a set of points to score
-        :return: the anomaly score
-        """
-        params = {}
-        for k, v in kwargs.items():
-            try:
-                params[k] = v
-            except KeyError:
-                raise RuntimeWarning("{} is not a defined parameter. See the docstring.".format(k))
         disp = np.array([self.codisplacement(xx) for xx in x])
         return disp
 
 
 class ExtendedIsolationTree(CombinationTree):
     def __init__(self, depth_limit=None):
+        """Initialize an extended isolation tree
+
+        Parameters
+        ----------
+        depth_limit : int
+            the maximum depth the tree can grow to, a depth limit of None indicates there is no limit
         """
-        Initialize an extended isolation tree
-        :param depth_limit: the maximum depth the tree can grow to,
-                            a depth limit of None indicates there is no limit"""
         super().__init__(depth_limit=depth_limit, rule_kind=NonAxisAlignedRule)
 
     def codisplacement(self, x):
@@ -687,22 +681,21 @@ class ExtendedIsolationTree(CombinationTree):
         raise NotImplementedError("Isolation trees do not have displacement. " +
                                   "See the CombinationTree or the RobustRandomCutTree instead.")
 
-    def score(self, x: np.ndarray, **kwargs) -> np.ndarray:
-        """
-        Calculate the anomaly score
-        :param x: a set of points to score
+    def score(self, x: np.ndarray, estimated: bool = False) -> np.ndarray:
+        """Calculate the anomaly score
 
-        :Keyword Arguments:
-            *  estimated: whether to use the absolute depth or the estimated depths from count, see depth(),
-                          default=False
-        :return: the anomaly score
-        """
-        params = {"estimated": False}
-        for k, v in kwargs.items():
-            try:
-                params[k] = v
-            except KeyError:
-                raise RuntimeWarning("{} is not a defined parameter. See the docstring.".format(k))
+        Parameters
+        ----------
+        x : np.ndarray
+            a set of points to score
+        estimated : bool
+            if True will use the counts at a leaf node to estimate how far down the tree the point
+                would be if it had been grown completely
 
-        depths = np.array([self.depth(xx, estimated=params['estimated']) for xx in x])
+        Returns
+        -------
+        np.ndarray
+            the scores!
+        """
+        depths = np.array([self.depth(xx, estimated=estimated) for xx in x])
         return depths
