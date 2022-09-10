@@ -1,6 +1,6 @@
 [project]
 name = "crcf"
-version = "0.0.4"
+version = "1.0.0"
 authors = [
     { name="J. Marcus Hughes", email="hughes.jmb@gmail.com"}
 ]
