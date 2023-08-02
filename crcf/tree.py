@@ -435,7 +435,7 @@ class CombinationTree:
         if normalize:
             disp = disp / (self.root.count - 1)
             depths = depths / self.root.count
-        return depth_weight * depths + disp_weight * disp
+        return depth_weight * 1/depths + disp_weight * disp
 
     def remove_by_node(self, node: Node) -> None:
         """Remove the specified node using RRCF rules
