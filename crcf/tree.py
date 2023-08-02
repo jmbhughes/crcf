@@ -4,7 +4,6 @@ import numpy as np
 from graphviz import Digraph
 from .rule import Rule, AxisAlignedRule, NonAxisAlignedRule
 from dataclasses import dataclass
-import pickle
 
 
 @dataclass(repr=False)
@@ -275,11 +274,7 @@ class CombinationTree:
         -------
         None
         """
-        # TODO: change this to a more robust save method
-        if not path.lower().endswith('.pkl'):
-            raise RuntimeError("Save paths should end with .pkl")
-        with open(path, 'wb') as f:
-            pickle.dump(self, f)
+        raise NotImplementedError("Saving was removed for a pickle vulnerability.")
 
     @classmethod
     def load(cls, path: str) -> CombinationTree:
@@ -295,9 +290,7 @@ class CombinationTree:
         CombinationTree
             the loaded tree
         """
-        with open(path, 'rb') as f:
-            tree = pickle.load(f)
-        return tree
+        raise NotImplementedError("Loading was removed for a pickle vulnerability.")
 
     def depth(self, x: np.ndarray,
               estimated: bool = True) -> float:
@@ -649,7 +642,7 @@ class IsolationTree(CombinationTree):
 
 
 class RobustRandomCutTree(CombinationTree):
-    def __init__(self,  depth_limit: Optional[int] = None) -> None:
+    def __init__(self, depth_limit: Optional[int] = None) -> None:
         super().__init__(depth_limit=depth_limit, rule_kind=AxisAlignedRule, rule_mode="biased")
 
     def depth(self, x: np.ndarray,

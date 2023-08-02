@@ -3,7 +3,6 @@ from typing import Optional, Type
 import crcf.tree
 import crcf.rule
 import numpy as np
-import pickle
 
 
 class CombinationForest:
@@ -49,11 +48,8 @@ class CombinationForest:
         -------
         None
         """
-        # TODO: change this to a more robust save method
-        if not path.lower().endswith('.pkl'):
-            raise RuntimeError("Save paths should end with .pkl")
-        with open(path, 'wb') as f:
-            pickle.dump(self, f)
+        raise NotImplementedError("Saving was removed for a pickle vulnerability.")
+
 
     @classmethod
     def load(cls, path: str) -> CombinationForest:
@@ -69,9 +65,7 @@ class CombinationForest:
         CombinationForest
             the loaded tree
         """
-        with open(path, 'rb') as f:
-            forest = pickle.load(f)
-        return forest
+        raise NotImplementedError("Saving was removed for a pickle vulnerability.")
 
     def depth(self, x: np.ndarray,
               estimated: bool = True) -> np.ndarray:
